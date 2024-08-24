@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Pagination System</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        #results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #results li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        #results li:hover {
+            background-color: #f9f9f9;
+        }
+
+        #loader {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .filter-container select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Advanced Pagination System</h1>
+
+        <input type="text" id="search-input" placeholder="Search..." autocomplete="off">
+
+        <div class="filter-container">
+            <select id="filter-category">
+                <option value="all">All Categories</option>
+                <option value="category1">Category 1</option>
+                <option value="category2">Category 2</option>
+            </select>
+        </div>
+
+        <ul id="results"></ul>
+
+        <div id="loader">
+            <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="50">
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search-input');
+        const results = document.getElementById('results');
+        const loader = document.getElementById('loader');
+        const filterCategory = document.getElementById('filter-category');
+        let page = 1;
+        let isLoading = false;
+        let totalPages = 10;
+        let debounceTimeout = null;
+
+        // Debounced search functionality
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                resetResults();
+                fetchResults();
+            }, 300);
+        });
+
+        // Fetch data on scroll for infinite scrolling
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight && !isLoading && page < totalPages) {
+                fetchResults();
+            }
+        });
+
+        // Filter results based on category
+        filterCategory.addEventListener('change', () => {
+            resetResults();
+            fetchResults();
+        });
+
+        // Fetch results from JSON server
+        async function fetchResults() {
+            if (isLoading) return;
+
+            isLoading = true;
+            loader.style.display = 'block';
+
+            const searchQuery = searchInput.value.trim();
+            const category = filterCategory.value;
+
+            let url = `https://jsonplaceholder.typicode.com/posts?_page=${page}&_limit=10`;
+            if (searchQuery) {
+                url += `&q=${searchQuery}`;
+            }
+            if (category !== 'all') {
+                url += `&category=${category}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            displayResults(data);
+
+            page++;
+            isLoading = false;
+            loader.style.display = 'none';
+        }
+
+        // Display results in the UI
+        function displayResults(data) {
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.title}`;
+                li.addEventListener('click', () => {
+                    alert(`You clicked on: ${item.title}`);
+                });
+                results.appendChild(li);
+            });
+        }
+
+        // Reset results and pagination
+        function resetResults() {
+            results.innerHTML = '';
+            page = 1;
+        }
+
+        // Initial fetch
+        fetchResults();
+    </script>
+</body>
+</html>
